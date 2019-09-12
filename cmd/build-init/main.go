@@ -11,7 +11,7 @@ import (
 
 	"github.com/pivotal/kpack/pkg/cnb"
 	"github.com/pivotal/kpack/pkg/dockercreds"
-	"github.com/pivotal/kpack/pkg/registry"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
 )
 
 var (

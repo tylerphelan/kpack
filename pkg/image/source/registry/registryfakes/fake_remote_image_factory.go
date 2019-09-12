@@ -4,7 +4,7 @@ package registryfakes
 import (
 	"sync"
 
-	"github.com/pivotal/kpack/pkg/registry"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
 )
 
 type FakeRemoteImageFactory struct {

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/pivotal/kpack/pkg/cnb"
-	"github.com/pivotal/kpack/pkg/registry"
-	"github.com/pivotal/kpack/pkg/registry/registryfakes"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
+	"github.com/pivotal/kpack/pkg/image/source/registry/registryfakes"
 )
 
 func TestMetadataRetriever(t *testing.T) {

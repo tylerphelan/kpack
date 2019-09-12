@@ -7,7 +7,7 @@ import (
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/dockercreds"
-	"github.com/pivotal/kpack/pkg/registry"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
 )
 
 type SecretKeychainFactory struct {

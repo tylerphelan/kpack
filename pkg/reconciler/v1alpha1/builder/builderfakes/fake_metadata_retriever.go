@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/pivotal/kpack/pkg/cnb"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/builder"
-	"github.com/pivotal/kpack/pkg/registry"
 )
 
 type FakeMetadataRetriever struct {

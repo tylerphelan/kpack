@@ -14,19 +14,19 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
-	"github.com/pivotal/kpack/pkg/blob"
 	"github.com/pivotal/kpack/pkg/buildpod"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	"github.com/pivotal/kpack/pkg/client/informers/externalversions"
 	"github.com/pivotal/kpack/pkg/cnb"
-	"github.com/pivotal/kpack/pkg/git"
+	"github.com/pivotal/kpack/pkg/image/source/blob"
+	"github.com/pivotal/kpack/pkg/image/source/git"
+	"github.com/pivotal/kpack/pkg/image/source/registry"
 	"github.com/pivotal/kpack/pkg/reconciler"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/build"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/builder"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/cluster_builder"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/image"
 	"github.com/pivotal/kpack/pkg/reconciler/v1alpha1/sourceresolver"
-	"github.com/pivotal/kpack/pkg/registry"
 	"github.com/pivotal/kpack/pkg/secret"
 )
 

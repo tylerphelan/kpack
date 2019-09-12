@@ -2,13 +2,12 @@ package sourceresolver
 
 import (
 	"context"
-	"errors"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/knative/pkg/controller"
+
 	"github.com/pivotal/kpack/pkg/apis/build/v1alpha1"
 	"github.com/pivotal/kpack/pkg/client/clientset/versioned"
 	v1alpha1informers "github.com/pivotal/kpack/pkg/client/informers/externalversions/build/v1alpha1"
@@ -20,12 +19,6 @@ const (
 	ReconcilerName = "SourceResolvers"
 	Kind           = "SourceResolver"
 )
-
-//go:generate counterfeiter . Resolver
-type Resolver interface {
-	Resolve(sourceResolver *v1alpha1.SourceResolver) (v1alpha1.ResolvedSourceConfig, error)
-	CanResolve(*v1alpha1.SourceResolver) bool
-}
 
 func NewController(
 	opt reconciler.Options,
@@ -59,10 +52,12 @@ type Enqueuer interface {
 	Enqueue(*v1alpha1.SourceResolver) error
 }
 
+type ResolveSource interface {
+	Run(source *v1alpha1.SourceResolver) (oldResolver *v1alpha1.SourceResolver, needUpdate bool, err error)
+}
+
 type Reconciler struct {
-	GitResolver          Resolver
-	BlobResolver         Resolver
-	RegistryResolver     Resolver
+	ResolveSource        ResolveSource
 	Enqueuer             Enqueuer
 	Client               versioned.Interface
 	SourceResolverLister v1alpha1listers.SourceResolverLister
@@ -80,52 +75,21 @@ func (c *Reconciler) Reconcile(ctx context.Context, key string) error {
 	} else if err != nil {
 		return err
 	}
-	sourceResolver = sourceResolver.DeepCopy()
 
-	sourceReconciler, err := c.sourceReconciler(sourceResolver)
-	if err != nil {
-		return err
-	}
+	newSourceResolver, needUpdate, err := c.ResolveSource.Run(sourceResolver)
 
-	resolvedSource, err := sourceReconciler.Resolve(sourceResolver)
-	if err != nil {
-		return err
-	}
-
-	sourceResolver.ResolvedSource(resolvedSource)
-
-	if sourceResolver.PollingReady() {
+	if newSourceResolver.PollingReady() {
 		err := c.Enqueuer.Enqueue(sourceResolver)
 		if err != nil {
 			return err
 		}
 	}
-
-	sourceResolver.Status.ObservedGeneration = sourceResolver.Generation
-	return c.updateStatus(sourceResolver)
-}
-
-func (c *Reconciler) sourceReconciler(sourceResolver *v1alpha1.SourceResolver) (Resolver, error) {
-	if c.GitResolver.CanResolve(sourceResolver) {
-		return c.GitResolver, nil
-	} else if c.BlobResolver.CanResolve(sourceResolver) {
-		return c.BlobResolver, nil
-	} else if c.RegistryResolver.CanResolve(sourceResolver) {
-		return c.RegistryResolver, nil
-	}
-	return nil, errors.New("invalid source type")
-}
-
-func (c *Reconciler) updateStatus(desired *v1alpha1.SourceResolver) error {
-	original, err := c.SourceResolverLister.SourceResolvers(desired.Namespace).Get(desired.Name)
-	if err != nil {
-		return err
-	}
-
-	if equality.Semantic.DeepEqual(original.Status, desired.Status) {
+	
+	if !needUpdate {
 		return nil
 	}
 
-	_, err = c.Client.BuildV1alpha1().SourceResolvers(desired.Namespace).UpdateStatus(desired)
+	sourceResolver.Status.ObservedGeneration = sourceResolver.Generation
+	_, err = c.Client.BuildV1alpha1().SourceResolvers(sourceResolver.Namespace).UpdateStatus(sourceResolver)
 	return err
 }

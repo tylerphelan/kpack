@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 const ActivePolling = "ActivePolling"
@@ -29,6 +30,30 @@ func (sr *SourceResolver) ResolvedSource(config ResolvedSourceConfig) {
 		Type:   ActivePolling,
 		Status: pollingStatus,
 	})
+}
+
+func (sr *SourceResolver) BecomeReady() {
+	sr.Status.Conditions = []duckv1alpha1.Condition{{
+		Type:   duckv1alpha1.ConditionReady,
+		Status: corev1.ConditionTrue,
+	}}
+}
+
+func (sr *SourceResolver) UpdatePollingStatus(status bool) {
+
+	pollingStatus := corev1.ConditionFalse
+	if status {
+		pollingStatus = corev1.ConditionTrue
+	}
+
+	sr.Status.Conditions = append(sr.Status.Conditions, duckv1alpha1.Condition{
+		Type:   ActivePolling,
+		Status: pollingStatus,
+	})
+}
+
+func (sr *SourceResolver) CompareStatus(other *SourceResolver) bool {
+	return equality.Semantic.DeepEqual(other.Status, sr.Status)
 }
 
 func (sr *SourceResolver) ConfigChanged(lastBuild *Build) bool {
