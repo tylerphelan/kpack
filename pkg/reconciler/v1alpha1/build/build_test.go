@@ -69,7 +69,6 @@ func testBuildReconciler(t *testing.T, when spec.G, it spec.S) {
 				PodLister:         listers.GetPodLister(),
 				MetadataRetriever: fakeMetadataRetriever,
 				PodGenerator:      podGenerator,
-				BuilderLister:     listers.GetBuilderLister(),
 			}
 
 			rtesting.PrependGenerateNameReactor(&fakeClient.Fake)

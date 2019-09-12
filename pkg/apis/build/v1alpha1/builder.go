@@ -38,3 +38,7 @@ func (b *Builder) Tag() string {
 func (b *Builder) HasSecret() bool {
 	return len(b.Spec.ImagePullSecrets) > 0
 }
+
+func (b *Builder) BuildpackMetadata() BuildpackMetadataList {
+	return b.Status.BuilderMetadata
+}

@@ -37,6 +37,7 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 	const (
 		imageName                    = "image-name"
 		builderName                  = "builder-name"
+		clusterBuilderName           = "cluster-builder-name"
 		serviceAccount               = "service-account"
 		namespace                    = "some-namespace"
 		key                          = "some-namespace/image-name"
@@ -64,6 +65,7 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 				ImageLister:          listers.GetImageLister(),
 				BuildLister:          listers.GetBuildLister(),
 				BuilderLister:        listers.GetBuilderLister(),
+				ClusterBuilderLister: listers.GetClusterBuilderLister(),
 				SourceResolverLister: listers.GetSourceResolverLister(),
 				PvcLister:            listers.GetPersistentVolumeClaimLister(),
 				Tracker:              fakeTracker,
@@ -86,7 +88,12 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 		Spec: v1alpha1.ImageSpec{
 			Tag:            "some/image",
 			ServiceAccount: serviceAccount,
-			BuilderRef:     builderName,
+			Builder: v1alpha1.ImageBuilder{
+				TypeMeta: metav1.TypeMeta{
+					Kind: "Builder",
+				},
+				Name: builderName,
+			},
 			Source: v1alpha1.SourceConfig{
 				Git: &v1alpha1.Git{
 					URL:      "https://some.git/url",
@@ -130,6 +137,32 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 		},
 	}
 
+	clusterBuilder := &v1alpha1.ClusterBuilder{
+		ObjectMeta: v1.ObjectMeta{
+			Name: clusterBuilderName,
+		},
+		Spec: v1alpha1.BuilderSpec{
+			Image: "some/builder",
+		},
+		Status: v1alpha1.BuilderStatus{
+			LatestImage: "some/builder@sha256acf123",
+			BuilderMetadata: v1alpha1.BuildpackMetadataList{
+				{
+					ID:      "buildpack.version",
+					Version: "version",
+				},
+			},
+			Status: duckv1alpha1.Status{
+				Conditions: duckv1alpha1.Conditions{
+					{
+						Type:   duckv1alpha1.ConditionReady,
+						Status: corev1.ConditionTrue,
+					},
+				},
+			},
+		},
+	}
+
 	when("Reconcile", func() {
 		it("updates observed generation after processing an update", func() {
 			const updatedGeneration int64 = 1
@@ -140,6 +173,7 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 				Objects: []runtime.Object{
 					image,
 					builder,
+					clusterBuilder,
 					unresolvedSourceResolver(image),
 				},
 				WantErr: false,
@@ -166,6 +200,7 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 				Objects: []runtime.Object{
 					image,
 					builder,
+					clusterBuilder,
 					unresolvedSourceResolver(image),
 				},
 				WantErr: false,
@@ -178,12 +213,13 @@ func testImageReconciler(t *testing.T, when spec.G, it spec.S) {
 				Objects: []runtime.Object{
 					image,
 					builder,
+					clusterBuilder,
 					unresolvedSourceResolver(image),
 				},
 				WantErr: false,
 			})
 
-			require.True(t, fakeTracker.IsTracking(builder.Ref(), image))
+			require.True(t, fakeTracker.IsTracking(builder, image.NamespacedName()))
 		})
 
 		it("sets condition not ready for non-existent builder", func() {

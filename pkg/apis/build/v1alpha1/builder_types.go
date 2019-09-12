@@ -7,8 +7,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+const BuilderKind = "Builder"
+
 // +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object,k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMetaAccessor
 
 type Builder struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -47,16 +49,5 @@ type BuilderList struct {
 }
 
 func (*Builder) GetGroupVersionKind() schema.GroupVersionKind {
-	return SchemeGroupVersion.WithKind("Builder")
-}
-
-func (b *Builder) Ref() v1.ObjectReference {
-
-	gvk := b.GetGroupVersionKind()
-	return v1.ObjectReference{
-		APIVersion: gvk.GroupVersion().String(),
-		Kind:       gvk.Kind,
-		Namespace:  b.Namespace(),
-		Name:       b.Name,
-	}
+	return SchemeGroupVersion.WithKind(BuilderKind)
 }
